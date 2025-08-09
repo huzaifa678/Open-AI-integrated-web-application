@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Text Generation API</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col items-center p-6">
+  <h1 class="text-4xl font-bold mb-6 text-blue-700">Generate Text with our LLM model</h1>
+
+  <form id="prompt-form" class="w-full max-w-3xl bg-white p-6 rounded-lg shadow-md">
+    <textarea
+      id="prompt"
+      name="prompt"
+      rows="6"
+      class="w-full p-3 border rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-blue-400"
+      placeholder="Please enter your prompt here..."
+      required
+    ></textarea>
+
+    <button
+      type="submit"
+      class="mt-4 bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition"
+    >
+      Generate
+    </button>
+  </form>
+
+  <div
+    id="response"
+    class="mt-8 w-full max-w-3xl bg-white p-6 rounded-lg shadow-md min-h-[120px] text-gray-800 whitespace-pre-wrap font-mono text-lg"
+  ></div>
+
+  <script>
+    const form = document.getElementById("prompt-form");
+    const responseDiv = document.getElementById("response");
+
+    async function typeText(text) {
+      responseDiv.textContent = "";
+      for (let i = 0; i < text.length; i++) {
+        responseDiv.textContent += text.charAt(i);
+        await new Promise(r => setTimeout(r, 30)); 
+      }
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const prompt = document.getElementById("prompt").value.trim();
+
+      if (!prompt) return;
+
+      responseDiv.textContent = "Generating response...";
+      
+      try {
+        const res = await fetch("/generate", {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams({ prompt }),
+        });
+
+        if (!res.ok) throw new Error("Network response was not ok");
+
+        const html = await res.text();
+
+
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, "text/html");
+        const generatedTextElem = doc.querySelector("h2 + p");
+
+        if (generatedTextElem) {
+          await typeText(generatedTextElem.textContent);
+        } else {
+          responseDiv.textContent = "Could not parse generated text.";
+        }
+      } catch (err) {
+        responseDiv.textContent = "Error: " + err.message;
+      }
+    });
+  </script>
+</body>
+</html>
