@@ -1,1 +1,3 @@
 .env
+llm-venv
+__pycache__
